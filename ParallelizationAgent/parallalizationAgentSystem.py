@@ -41,48 +41,113 @@ This Consulting Agreement (the "Agreement") is made effective as of January 1, 2
 IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.
 """
 
-# TODO: Implement these agent classes
-
 class LegalTermsChecker:
     """Agent that checks for problematic legal terms and clauses in contracts."""
     def run(self, contract_text):
-        # TODO: Implement this method to analyze legal terms
-        pass
+        print("Legal Terms Checker analyzing contract...")
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a legal expert specializing in contract law. Analyze the contract for potentially problematic legal terms, clauses, or language that could create legal issues or disputes. Focus on liability, rights, obligations, and ambiguous language."},
+                {"role": "user", "content": f"Analyze this contract for problematic legal terms and clauses:\n\n{contract_text}"}
+            ],
+            temperature=0.3
+        )
+        agent_outputs["legal"] = response.choices[0].message.content
+        print("Legal Terms Checker completed analysis.")
 
 class ComplianceValidator:
     """Agent that validates regulatory and industry compliance of contracts."""
     def run(self, contract_text):
-        # TODO: Implement this method to check compliance
-        pass
+        print("Compliance Validator analyzing contract...")
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a compliance expert specializing in regulatory requirements across industries. Analyze the contract for potential compliance issues related to data privacy, labor laws, industry-specific regulations, and standard business practices."},
+                {"role": "user", "content": f"Analyze this contract for regulatory and industry compliance issues:\n\n{contract_text}"}
+            ],
+            temperature=0.3
+        )
+        agent_outputs["compliance"] = response.choices[0].message.content
+        print("Compliance Validator completed analysis.")
 
 class FinancialRiskAssessor:
     """Agent that assesses financial risks and liabilities in contracts."""
     def run(self, contract_text):
-        # TODO: Implement this method to evaluate financial risks
-        pass
+        print("Financial Risk Assessor analyzing contract...")
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a financial analyst specializing in contract risk assessment. Analyze the contract for financial risks, liability exposure, payment terms issues, and potential financial implications that could negatively impact a business."},
+                {"role": "user", "content": f"Analyze this contract for financial risks and liabilities:\n\n{contract_text}"}
+            ],
+            temperature=0.3
+        )
+        agent_outputs["financial"] = response.choices[0].message.content
+        print("Financial Risk Assessor completed analysis.")
 
 class SummaryAgent:
     """Agent that synthesizes findings from all specialized agents."""
     def run(self, contract_text, inputs):
-        # TODO: Implement this method to create a comprehensive summary
-        pass
+        print("Summary Agent synthesizing findings...")
+        combined_prompt = (
+            f"Contract:\n{contract_text}\n\n"
+            f"Here are the expert analyses:\n\n"
+            f"LEGAL ANALYSIS:\n{inputs['legal']}\n\n"
+            f"COMPLIANCE ANALYSIS:\n{inputs['compliance']}\n\n"
+            f"FINANCIAL ANALYSIS:\n{inputs['financial']}\n\n"
+            "Please synthesize these analyses into a comprehensive contract assessment report with the following sections:\n"
+            "1. Executive Summary\n"
+            "2. Key Legal Concerns\n"
+            "3. Compliance Issues\n"
+            "4. Financial Risks\n"
+            "5. Recommended Actions\n\n"
+            "The report should be concise, actionable, and highlight the most critical findings."
+        )
+        
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a senior contract analyst skilled at synthesizing expert insights into clear, actionable business recommendations."},
+                {"role": "user", "content": combined_prompt}
+            ],
+            temperature=0.3
+        )
+        return response.choices[0].message.content
 
 # Main function to run all agents in parallel
 def analyze_contract(contract_text):
     """Run all agents in parallel and summarize their findings."""
-    # TODO: Implement parallel execution of agents
-    # 1. Create agent instances
-    # 2. Run them in parallel using threading
-    # 3. Collect their outputs
-    # 4. Generate a summary using the SummaryAgent
-    # 5. Return the final analysis
-    pass
+    # Create agent instances
+    legal_agent = LegalTermsChecker()
+    compliance_agent = ComplianceValidator()
+    financial_agent = FinancialRiskAssessor()
+    summary_agent = SummaryAgent()
+    
+    # Run agents in parallel
+    threads = [
+        threading.Thread(target=legal_agent.run, args=(contract_text,)),
+        threading.Thread(target=compliance_agent.run, args=(contract_text,)),
+        threading.Thread(target=financial_agent.run, args=(contract_text,))
+    ]
+    
+    # Start all threads
+    for t in threads:
+        t.start()
+    
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+    
+    # Generate summary from all agent outputs
+    final_analysis = summary_agent.run(contract_text, agent_outputs)
+    
+    return final_analysis
 
 if __name__ == "__main__":
     print("Enterprise Contract Analysis System")
     print("Analyzing contract...")
     
-    # TODO: Call the analyze_contract function and print results
     final_analysis = analyze_contract(contract_text)
     print("\n=== FINAL CONTRACT ANALYSIS ===\n")
     print(final_analysis)

@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 
@@ -8,6 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = None
+
+logger = logging.getLogger(__name__)
 
 
 def get_client():
@@ -106,16 +109,10 @@ class ActionPlanningAgent:
     the provided knowledge and OpenAI's chat model.
     """
 
-    def __init__(self, knowledge="", api_key=None):
+    def __init__(self, name, knowledge=""):
+        self.name = name
         self.knowledge = knowledge
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.client = None
 
-        if self.api_key:
-            self.client = OpenAI(
-                base_url="https://openai.vocareum.com/v1",
-                api_key=self.api_key,
-            )
 
     def _clean_steps(self, text):
         steps = []
@@ -138,8 +135,6 @@ class ActionPlanningAgent:
         return steps
 
     def respond(self, user_prompt):
-        if self.client is None:
-            raise RuntimeError("OPENAI_API_KEY is not set.")
 
         system_prompt = (
             "You are an Action Planning Agent. Extract the action steps "
@@ -148,7 +143,7 @@ class ActionPlanningAgent:
             "Return the steps as a concise list."
         )
 
-        response = self.client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -199,7 +194,7 @@ class RoutingAgent:
         for entry in self.agents:
             if isinstance(entry, dict):
                 description = entry.get("description", "")
-                agent_callable = entry.get("agent")
+                agent_callable = entry.get("func")
             else:
                 description = getattr(entry, "description", "")
                 agent_callable = entry
@@ -217,17 +212,12 @@ class RoutingAgent:
         if best_agent is None:
             raise ValueError("Unable to select a routing target.")
 
-        if isinstance(best_agent, dict):
-            callable_agent = best_agent.get("agent")
-        else:
-            callable_agent = best_agent
-
-        if hasattr(callable_agent, "execute"):
-            return callable_agent.execute(user_prompt)
-        if hasattr(callable_agent, "respond"):
-            return callable_agent.respond(user_prompt)
-        if callable(callable_agent):
-            return callable_agent(user_prompt)
+        if hasattr(best_agent, "execute"):
+            return best_agent.execute(user_prompt)
+        if hasattr(best_agent, "respond"):
+            return best_agent.respond(user_prompt)
+        if callable(best_agent):
+            return best_agent(user_prompt)
 
         raise TypeError(
             "The selected agent does not provide a callable response method."
@@ -319,3 +309,126 @@ class EvaluationAgent:
             "correction_instructions": correction_instructions,
             "iterations": iterations_performed,
         }
+
+
+# ============================================================================
+# PRODUCT SPECIFICATION LOADING
+# ============================================================================
+
+def load_product_specification(filepath: str = None) -> str:
+    """Load product specification dynamically from file."""
+    if filepath is None:
+        filepath = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "Product-Spec-Email-Router.txt",
+        )
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.warning(
+            f"File not found: {filepath}. Using empty specification."
+        )
+        return ""
+
+
+product_spec = load_product_specification()
+
+# ============================================================================
+# AGENT CONFIGURATION (DRY - Single Source of Truth)
+# ============================================================================
+
+AGENT_CONFIG = {
+    "action_planner": {
+        "name": "ActionPlanningAgent",
+        "knowledge": (
+            "Stories are defined from a product spec by identifying a "
+            "persona, an action, and a desired outcome for each story. "
+            "Each story represents a specific functionality of the product "
+            "described in the specification. \n"
+            "Features are defined by grouping related user stories. \n"
+            "Tasks are defined for each story and represent the engineering "
+            "work required to develop the product. \n"
+            "A development Plan for a product contains all these components"
+        ),
+    },
+    "product_manager": {
+        "name": "ProductManagerKnowledgeAgent",
+        "persona": (
+            "You are a Product Manager, you are responsible for defining "
+            "the user stories for a product."
+        ),
+        "knowledge": (
+            "Stories are defined by writing sentences with a persona, "
+            "an action, and a desired outcome. "
+            "The sentences always start with: As a "
+            "Write several stories for the product spec below, where "
+            "the personas are the different users of the product. "
+            + product_spec
+        ),
+        "eval_persona": (
+            "You are an evaluation agent that checks the answers "
+            "of other worker agents."
+        ),
+        "eval_criteria": (
+            "The answer should be user stories that follow the following "
+            "structure: "
+            "As a [type of user], I want [an action or feature] so that "
+            "[benefit/value]."
+        ),
+    },
+    "program_manager": {
+        "name": "ProgramManagerKnowledgeAgent",
+        "persona": (
+            "You are a Program Manager, you are responsible for defining "
+            "the features for a product."
+        ),
+        "knowledge": (
+            "Features of a product are defined by organizing similar "
+            "user stories into cohesive groups."
+        ),
+        "eval_persona": (
+            "You are an evaluation agent that checks the answers "
+            "of other worker agents."
+        ),
+        "eval_criteria": (
+            "The answer should be product features that follow the "
+            "following structure: "
+            "Feature Name: A clear, concise title that identifies "
+            "the capability\n"
+            "Description: A brief explanation of what the feature does "
+            "and its purpose\n"
+            "Key Functionality: The specific capabilities or actions "
+            "the feature provides\n"
+            "User Benefit: How this feature creates value for the user"
+        ),
+    },
+    "development_engineer": {
+        "name": "DevelopmentEngineerKnowledgeAgent",
+        "persona": (
+            "You are a Development Engineer, you are responsible for "
+            "defining the development tasks for a product."
+        ),
+        "knowledge": (
+            "Development tasks are defined by identifying what needs "
+            "to be built to implement each user story."
+        ),
+        "eval_persona": (
+            "You are an evaluation agent that checks the answers "
+            "of other worker agents."
+        ),
+        "eval_criteria": (
+            "The answer should be tasks following this exact structure: "
+            "Task ID: A unique identifier for tracking purposes\n"
+            "Task Title: Brief description of the specific development "
+            "work\n"
+            "Related User Story: Reference to the parent user story\n"
+            "Description: Detailed explanation of the technical work "
+            "required\n"
+            "Acceptance Criteria: Specific requirements that must be met "
+            "for completion\n"
+            "Estimated Effort: Time or complexity estimation\n"
+            "Dependencies: Any tasks that must be completed first"
+        ),
+    },
+}

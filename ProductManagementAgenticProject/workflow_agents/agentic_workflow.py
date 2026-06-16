@@ -44,7 +44,7 @@ def create_support_function(
             user_prompt=query,
             criteria=criteria,
         )
-        return result["evaluation_result"]
+        return result["final_response"]
     return support_function
 
 
@@ -64,7 +64,7 @@ product_manager_knowledge_agent = create_knowledge_augmented_agent(
     AGENT_CONFIG["product_manager"]["persona"],
     AGENT_CONFIG["product_manager"]["knowledge"],
 )
-product_manager_evaluation_agent = create_evaluation_agent(max_interactions=5)
+product_manager_evaluation_agent = create_evaluation_agent(max_interactions=1)
 
 product_manager_support_function = create_support_function(
     product_manager_knowledge_agent,
@@ -78,7 +78,7 @@ program_manager_knowledge_agent = create_knowledge_augmented_agent(
     AGENT_CONFIG["program_manager"]["persona"],
     AGENT_CONFIG["program_manager"]["knowledge"],
 )
-program_manager_evaluation_agent = create_evaluation_agent(max_interactions=5)
+program_manager_evaluation_agent = create_evaluation_agent(max_interactions=1)
 program_manager_support_function = create_support_function(
     program_manager_knowledge_agent,
     program_manager_evaluation_agent,
@@ -91,7 +91,7 @@ development_engineer_knowledge_agent = create_knowledge_augmented_agent(
     AGENT_CONFIG["development_engineer"]["persona"],
     AGENT_CONFIG["development_engineer"]["knowledge"],
 )
-development_engineer_evaluation_agent = create_evaluation_agent(max_interactions=5)
+development_engineer_evaluation_agent = create_evaluation_agent(max_interactions=1)
 development_engineer_support_function = create_support_function(
     development_engineer_knowledge_agent,
     development_engineer_evaluation_agent,
@@ -158,14 +158,24 @@ def main() -> None:
     
     logger.info(f"Found {len(steps)} workflow steps\n")
     
-    # Execute workflow
+
     completed_steps: List[str] = []
     successful_steps = 0
+    context = ""
     
     for idx, step in enumerate(steps, 1):
-        success, result = execute_workflow_step(step, idx, len(steps))
+     
+        enhanced_step = f"""
+        Current context:
+        {context}
+        New instruction:
+        {step}
+        """
+
+        success, result = execute_workflow_step(enhanced_step, idx, len(steps))
         if success:
             completed_steps.append(result)
+            context += f"\n\nStep {idx} output:\n{result}"
             successful_steps += 1
             logger.info(f"Result: {result}\n")
         else:

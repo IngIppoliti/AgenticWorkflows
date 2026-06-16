@@ -182,42 +182,48 @@ class RoutingAgent:
 
         return dot_product / (left_norm * right_norm)
 
-    def route(self, user_prompt):
+    def route(self, task):
         if not self.agents:
             raise ValueError("No agents are available for routing.")
 
-        prompt_embedding = self.get_embedding(user_prompt)
+        task_embedding = self.get_embedding(task)
 
         best_agent = None
         best_score = -1.0
 
         for entry in self.agents:
             if isinstance(entry, dict):
+                name = entry.get("name", "")
                 description = entry.get("description", "")
                 agent_callable = entry.get("func")
             else:
+                name = getattr(entry, "name", "")
                 description = getattr(entry, "description", "")
                 agent_callable = entry
 
             description_embedding = self.get_embedding(description)
             similarity = self._cosine_similarity(
-                prompt_embedding,
+                task_embedding,
                 description_embedding,
             )
 
             if similarity > best_score:
                 best_score = similarity
                 best_agent = agent_callable
+                best_agent_name = name
+            
+        logger.info(f"Task → {task} Routing → {best_agent_name} (score: {best_score:.3f})")
+
 
         if best_agent is None:
             raise ValueError("Unable to select a routing target.")
 
         if hasattr(best_agent, "execute"):
-            return best_agent.execute(user_prompt)
+            return best_agent.execute(task)
         if hasattr(best_agent, "respond"):
-            return best_agent.respond(user_prompt)
+            return best_agent.respond(task)
         if callable(best_agent):
-            return best_agent(user_prompt)
+            return best_agent(task)
 
         raise TypeError(
             "The selected agent does not provide a callable response method."

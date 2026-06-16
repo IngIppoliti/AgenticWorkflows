@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict
 from openai import OpenAI
 from dotenv import load_dotenv
 

@@ -1,0 +1,122 @@
+========================================================================
+[2026-06-17 08:49:04]  Test: demo_test.py
+========================================================================
+INPUT:
+Test input
+
+OUTPUT:
+Test output
+
+EXTRA:
+demo extra
+
+========================================================================
+[2026-06-17 08:52:38]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\action_planning_agent_test.py
+========================================================================
+INPUT:
+One morning I wanted to have scrambled eggs
+
+OUTPUT:
+['Crack the eggs', 'Heat the pan', 'Cook and serve']
+
+EXTRA:
+expected=['Crack the eggs', 'Heat the pan', 'Cook and serve'] | passed=True
+
+========================================================================
+[2026-06-17 08:54:34]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\augmented_prompt_agent_test.py
+========================================================================
+INPUT:
+Why is Paris a great city for first-time visitors?
+
+OUTPUT:
+Paris is a great city for first-time visitors for several reasons:
+
+1. Iconic Landmarks: Paris is home to iconic landmarks such as the Eiffel Tower, Louvre Museum, Notre-Dame Cathedral, and Arc de Triomphe, which are must-see attractions for first-time visitors.
+
+2. Rich History and Culture: Paris is known for its rich history, art, and culture. Visitors can explore world-class museums, art galleries, and historic sites that offer insight into the city's past.
+
+3. Romantic Atmosphere: Paris is often referred to as the "City of Love" due to its romantic ambiance, charming streets, and beautiful architecture. It's a great destination for couples and honeymooners.
+
+4. Delicious Cuisine: Paris is famous for its delicious food and wine. Visitors can indulge in French pastries, gourmet cuisine, and local specialties at cozy cafes and Michelin-starred restaurants.
+
+5. Shopping and Fashion: Paris is a fashion capital with designer boutiques, department stores, and trendy shops. Visitors can shop for high-end fashion, perfumes, and souvenirs in the city's chic neighborhoods.
+
+6. Easy to Navigate: Paris has an efficient public transportation system, including buses, metro, and trains, making it easy for first-time visitors to explore the city. Many attractions are also within walking distance of each other.
+
+Overall, Paris offers a perfect blend of history, culture, cuisine, and romance, making it an ideal destination for first-time visitors looking for a memorable travel experience.
+
+EXTRA:
+Knowledge source: general LLM knowledge. Persona: a helpful travel advisor.
+
+========================================================================
+[2026-06-17 08:54:47]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\direct_prompt_agent_test.py
+========================================================================
+INPUT:
+What is the Capital of France?
+
+OUTPUT:
+The capital of France is Paris.
+
+EXTRA:
+Knowledge source: general LLM knowledge.
+
+========================================================================
+[2026-06-17 08:55:32]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\evaluation_agent_test.py
+========================================================================
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. I must correct the inaccuracy in the previous response. The capital of France is Paris, not London.
+
+EXTRA:
+evaluation_result=The worker response is accurate, clear, and follows the provided knowledge instructions by correcting the inaccuracy regarding the capital of France. It meets the criteria effectively. | iterations=6
+
+========================================================================
+[2026-06-17 08:56:21]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\knowledge_augmented_prompt_agent.py
+========================================================================
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. The capital of France is London, not Paris.
+
+EXTRA:
+Knowledge provided: 'The capital of France is London, not Paris'. Tests that the agent uses supplied knowledge over inherent knowledge.
+
+========================================================================
+[2026-06-17 09:00:12]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\evaluation_agent_test.py
+========================================================================
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. The capital of France is Paris, not London.
+
+EXTRA:
+evaluation_result=The worker response is accurate and clear. It follows the provided knowledge instructions by correcting the capital of France to Paris instead of London. | iterations=10
+
+========================================================================
+[2026-06-17 09:02:14]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\evaluation_agent_test.py
+========================================================================
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. I must correct the previous response. The capital of France is Paris, not London.
+
+EXTRA:
+evaluation_result=The worker response is accurate, clear, and follows the provided knowledge instructions by correcting the previous response regarding the capital of France. Good job! | iterations=2
+
+========================================================================
+[2026-06-17 09:36:09]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\action_planning_agent_test.py
+========================================================================
+INPUT:
+One morning I wanted to have scrambled eggs
+
+OUTPUT:
+['Crack the eggs', 'Heat the pan', 'Cook and serve']
+
+EXTRA:
+expected=['Crack the eggs', 'Heat the pan', 'Cook and serve'] | passed=True
+

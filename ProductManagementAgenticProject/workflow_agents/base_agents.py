@@ -86,8 +86,7 @@ class KnowledgeAugmentedPromptAgent:
         system_prompt = (
             f"You are {self.persona} knowledge-based assistant. "
             "Forget all previous context.\n"
-            f"Use only the following knowledge to answer, do not use "
-            f"your own knowledge: {self.knowledge}\n"
+            f"Use only the following knowledge to answer: {self.knowledge}\n"
             "Answer the prompt based on this knowledge, not your own."
         )
 
@@ -137,10 +136,21 @@ class ActionPlanningAgent:
     def respond(self, user_prompt):
 
         system_prompt = (
-            "You are an Action Planning Agent. Extract the action steps "
-            "needed to complete the task described in the user's prompt. "
-            f"Use the following knowledge when helpful: {self.knowledge}. "
-            "Return the steps as a concise list."
+            
+            f"""
+            You are an Action Planning Agent.
+
+            Your task is to extract the action steps needed to complete the user's objective.
+
+            Use this knowledge when helpful:
+            {self.knowledge}
+
+            Rules:
+            - Return only a concise list of actionable steps.
+            - Each step must be a single action.
+            - Do not include explanations, introductions, or conclusions.
+            - Do not add steps that are not implied by the user's request.
+            """
         )
 
         response = get_client().chat.completions.create(
@@ -153,6 +163,7 @@ class ActionPlanningAgent:
         )
 
         raw_text = response.choices[0].message.content or ""
+        print(f"Raw response from ActionPlanningAgent: {raw_text}")
         return self._clean_steps(raw_text)
 
 
@@ -219,15 +230,17 @@ class RoutingAgent:
             raise ValueError("Unable to select a routing target.")
 
         if hasattr(best_agent, "execute"):
-            return best_agent.execute(task)
-        if hasattr(best_agent, "respond"):
-            return best_agent.respond(task)
-        if callable(best_agent):
-            return best_agent(task)
+            output = best_agent.execute(task)
+        elif hasattr(best_agent, "respond"):
+            output = best_agent.respond(task)
+        elif callable(best_agent):
+            output = best_agent(task)
+        else:
+            raise TypeError(
+                "The selected agent does not provide a callable response method."
+            )
 
-        raise TypeError(
-            "The selected agent does not provide a callable response method."
-        )
+        return output, best_agent_name
 
 
 class EvaluationAgent:
@@ -238,6 +251,51 @@ class EvaluationAgent:
     def __init__(self, max_interactions=5):
         self.max_interactions = max_interactions
 
+    def evaluate(self, worker_response, criteria):
+        evaluation_prompt = (
+            "Evaluate the worker response against these criteria: "
+            f"{criteria}.\n\nWorker response:\n{worker_response}"
+        )
+
+        evaluation_response = get_client().chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert evaluator. Be concise, truthful, "
+                        "and focus on accuracy, clarity, and instruction-following."
+                    ),
+                },
+                {"role": "user", "content": evaluation_prompt},
+            ],
+            temperature=0,
+        )
+        return evaluation_response.choices[0].message.content
+    
+    def _generate_correction_instructions(self, evaluation_result):
+        correction_prompt = (
+            "Based on the evaluation, provide short correction "
+            f"instructions for the worker response.\n\nEvaluation:\n"
+            f"{evaluation_result}"
+        )
+
+        correction_response = get_client().chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a correction assistant. Return brief "
+                        "and actionable guidance only."
+                    ),
+                },
+                {"role": "user", "content": correction_prompt},
+            ],
+            temperature=0,
+        )
+        return correction_response.choices[0].message.content
+    
     def respond(self, worker_agent, user_prompt, criteria=None):
         if criteria is None:
             criteria = (
@@ -250,64 +308,23 @@ class EvaluationAgent:
         correction_instructions = ""
         iterations_performed = 0
 
+        revised_prompt = user_prompt
         for _ in range(self.max_interactions):
             iterations_performed += 1
-            if hasattr(worker_agent, "respond"):
-                worker_response = worker_agent.respond(user_prompt)
-            else:
-                worker_response = worker_agent.execute(user_prompt)
-
-            evaluation_prompt = (
-                "Evaluate the worker response against these criteria: "
-                f"{criteria}.\n\nWorker response:\n{worker_response}"
-            )
-
-            evaluation_response = get_client().chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are an expert evaluator. Be concise, "
-                            "truthful, and focus on accuracy, clarity, "
-                            "and instruction-following."
-                        ),
-                    },
-                    {"role": "user", "content": evaluation_prompt},
-                ],
-                temperature=0,
-            )
-            evaluation_result = evaluation_response.choices[0].message.content
-
-            correction_prompt = (
-                "Based on the evaluation, provide short correction "
-                f"instructions for the worker response.\n\nEvaluation:\n"
-                f"{evaluation_result}"
-            )
-
-            correction_response = get_client().chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a correction assistant. Return brief "
-                            "and actionable guidance only."
-                        ),
-                    },
-                    {"role": "user", "content": correction_prompt},
-                ],
-                temperature=0,
-            )
-            correction_instructions = (
-                correction_response.choices[0].message.content
-            )
-
-            if (
-                "no issues" in evaluation_result.lower()
+            worker_response = worker_agent.respond(revised_prompt)
+            evaluation_result = self.evaluate(worker_response, criteria)
+            print(f"Iteration {iterations_performed} worker response: {worker_response}")
+            print(f"Iteration {iterations_performed} evaluation: {evaluation_result}")
+            if ("no issues" in evaluation_result.lower()
                 or "good" in evaluation_result.lower()
+                or "acceptable" in evaluation_result.lower()
+                or "meets the criteria" in evaluation_result.lower()
+                or "is accurate" in evaluation_result.lower()
             ):
                 break
+            
+            correction_instructions = self._generate_correction_instructions(evaluation_result)
+            revised_prompt = f"{user_prompt}\n\n Revised instructions based on evaluation: {correction_instructions}"
 
         return {
             "final_response": worker_response,
@@ -315,126 +332,3 @@ class EvaluationAgent:
             "correction_instructions": correction_instructions,
             "iterations": iterations_performed,
         }
-
-
-# ============================================================================
-# PRODUCT SPECIFICATION LOADING
-# ============================================================================
-
-def load_product_specification(filepath: str = None) -> str:
-    """Load product specification dynamically from file."""
-    if filepath is None:
-        filepath = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "Product-Spec-Email-Router.txt",
-        )
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        logger.warning(
-            f"File not found: {filepath}. Using empty specification."
-        )
-        return ""
-
-
-product_spec = load_product_specification()
-
-# ============================================================================
-# AGENT CONFIGURATION (DRY - Single Source of Truth)
-# ============================================================================
-
-AGENT_CONFIG = {
-    "action_planner": {
-        "name": "ActionPlanningAgent",
-        "knowledge": (
-            "Stories are defined from a product spec by identifying a "
-            "persona, an action, and a desired outcome for each story. "
-            "Each story represents a specific functionality of the product "
-            "described in the specification. \n"
-            "Features are defined by grouping related user stories. \n"
-            "Tasks are defined for each story and represent the engineering "
-            "work required to develop the product. \n"
-            "A development Plan for a product contains all these components"
-        ),
-    },
-    "product_manager": {
-        "name": "ProductManagerKnowledgeAgent",
-        "persona": (
-            "You are a Product Manager, you are responsible for defining "
-            "the user stories for a product."
-        ),
-        "knowledge": (
-            "Stories are defined by writing sentences with a persona, "
-            "an action, and a desired outcome. "
-            "The sentences always start with: As a "
-            "Write several stories for the product spec below, where "
-            "the personas are the different users of the product. "
-            + product_spec
-        ),
-        "eval_persona": (
-            "You are an evaluation agent that checks the answers "
-            "of other worker agents."
-        ),
-        "eval_criteria": (
-            "The answer should be user stories that follow the following "
-            "structure: "
-            "As a [type of user], I want [an action or feature] so that "
-            "[benefit/value]."
-        ),
-    },
-    "program_manager": {
-        "name": "ProgramManagerKnowledgeAgent",
-        "persona": (
-            "You are a Program Manager, you are responsible for defining "
-            "the features for a product."
-        ),
-        "knowledge": (
-            "Features of a product are defined by organizing similar "
-            "user stories into cohesive groups."
-        ),
-        "eval_persona": (
-            "You are an evaluation agent that checks the answers "
-            "of other worker agents."
-        ),
-        "eval_criteria": (
-            "The answer should be product features that follow the "
-            "following structure: "
-            "Feature Name: A clear, concise title that identifies "
-            "the capability\n"
-            "Description: A brief explanation of what the feature does "
-            "and its purpose\n"
-            "Key Functionality: The specific capabilities or actions "
-            "the feature provides\n"
-            "User Benefit: How this feature creates value for the user"
-        ),
-    },
-    "development_engineer": {
-        "name": "DevelopmentEngineerKnowledgeAgent",
-        "persona": (
-            "You are a Development Engineer, you are responsible for "
-            "defining the development tasks for a product."
-        ),
-        "knowledge": (
-            "Development tasks are defined by identifying what needs "
-            "to be built to implement each user story."
-        ),
-        "eval_persona": (
-            "You are an evaluation agent that checks the answers "
-            "of other worker agents."
-        ),
-        "eval_criteria": (
-            "The answer should be tasks following this exact structure: "
-            "Task ID: A unique identifier for tracking purposes\n"
-            "Task Title: Brief description of the specific development "
-            "work\n"
-            "Related User Story: Reference to the parent user story\n"
-            "Description: Detailed explanation of the technical work "
-            "required\n"
-            "Acceptance Criteria: Specific requirements that must be met "
-            "for completion\n"
-            "Estimated Effort: Time or complexity estimation\n"
-            "Dependencies: Any tasks that must be completed first"
-        ),
-    },
-}

@@ -8,6 +8,7 @@ from base_agents import (  # noqa: E402
     EvaluationAgent,
     KnowledgeAugmentedPromptAgent,
 )
+from test_logger import log_test_run  # noqa: E402
 
 
 if __name__ == "__main__":
@@ -36,3 +37,10 @@ if __name__ == "__main__":
     print("Evaluation result:")
     print(result["evaluation_result"])
     print("Iterations used:", result["iterations"])
+
+    log_test_run(
+        test_file=__file__,
+        input_data=prompt,
+        output_data=result["final_response"],
+        extra=f"evaluation_result={result['evaluation_result']} | iterations={result['iterations']}",
+    )

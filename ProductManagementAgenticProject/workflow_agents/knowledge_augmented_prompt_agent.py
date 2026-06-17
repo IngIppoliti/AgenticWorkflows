@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from base_agents import KnowledgeAugmentedPromptAgent  # noqa: E402
+from test_logger import log_test_run  # noqa: E402
 
 
 if __name__ == "__main__":
@@ -30,6 +31,17 @@ if __name__ == "__main__":
 
     print("Prompt:", user_prompt)
     print("Response:", response)
+
+    log_test_run(
+        test_file=__file__,
+        input_data=user_prompt,
+        output_data=response,
+        extra=(
+            "Knowledge provided: 'The capital of France is London, not Paris'. "
+            "Tests that the agent uses supplied knowledge over inherent knowledge."
+        ),
+    )
+
     print(
         "This response explicitly uses the provided knowledge rather "
         "than the model's inherent general knowledge."

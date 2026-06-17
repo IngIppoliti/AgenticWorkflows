@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from base_agents import AugmentedPromptAgent  # noqa: E402
+from test_logger import log_test_run  # noqa: E402
 
 
 if __name__ == "__main__":
@@ -20,6 +21,16 @@ if __name__ == "__main__":
 
     print("Prompt:", user_prompt)
     print("Response:", augmented_agent_response)
+
+    log_test_run(
+        test_file=__file__,
+        input_data=user_prompt,
+        output_data=augmented_agent_response,
+        extra=(
+            "Knowledge source: general LLM knowledge. "
+            "Persona: a helpful travel advisor."
+        ),
+    )
 
     # The response is generated using the LLM's general knowledge base,
     # plus the role/persona instructions supplied to the agent.

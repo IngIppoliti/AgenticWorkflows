@@ -1,13 +1,15 @@
 import logging
-from typing import Callable, List, Tuple
+from typing import Callable, Tuple
 
-from workflow_agents.base_agents import (
+from config import AGENT_CONFIG, load_product_specification
+
+from base_agents import (
     ActionPlanningAgent,
-    AGENT_CONFIG,
     EvaluationAgent,
     KnowledgeAugmentedPromptAgent,
     RoutingAgent,
 )
+from workflow_state import PlanState
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -64,7 +66,7 @@ product_manager_knowledge_agent = create_knowledge_augmented_agent(
     AGENT_CONFIG["product_manager"]["persona"],
     AGENT_CONFIG["product_manager"]["knowledge"],
 )
-product_manager_evaluation_agent = create_evaluation_agent(max_interactions=1)
+product_manager_evaluation_agent = create_evaluation_agent(max_interactions=3)
 
 product_manager_support_function = create_support_function(
     product_manager_knowledge_agent,
@@ -78,7 +80,7 @@ program_manager_knowledge_agent = create_knowledge_augmented_agent(
     AGENT_CONFIG["program_manager"]["persona"],
     AGENT_CONFIG["program_manager"]["knowledge"],
 )
-program_manager_evaluation_agent = create_evaluation_agent(max_interactions=1)
+program_manager_evaluation_agent = create_evaluation_agent(max_interactions=3)
 program_manager_support_function = create_support_function(
     program_manager_knowledge_agent,
     program_manager_evaluation_agent,
@@ -91,7 +93,7 @@ development_engineer_knowledge_agent = create_knowledge_augmented_agent(
     AGENT_CONFIG["development_engineer"]["persona"],
     AGENT_CONFIG["development_engineer"]["knowledge"],
 )
-development_engineer_evaluation_agent = create_evaluation_agent(max_interactions=1)
+development_engineer_evaluation_agent = create_evaluation_agent(max_interactions=3)
 development_engineer_support_function = create_support_function(
     development_engineer_knowledge_agent,
     development_engineer_evaluation_agent,
@@ -128,16 +130,19 @@ routing_agent = RoutingAgent(
 # ============================================================================
 
 
-def execute_workflow_step(step: str, idx: int, total: int) -> Tuple[bool, str]:
-    """Execute a single workflow step with error handling."""
+def execute_workflow_step(
+    step: str, idx: int, total: int
+) -> Tuple[bool, str, str]:
+    """Execute a single workflow step with error handling.
+    Returns (success, output, agent_name)."""
     try:
         logger.info(f"[Step {idx}/{total}] Executing: {step}")
-        routed_response = routing_agent.route(step)
-        logger.info(f"[Step {idx}/{total}] Completed successfully")
-        return True, routed_response
-    except Exception as e:
-        logger.error(f"[Step {idx}/{total}] Error: {str(e)}")
-        return False, str(e)
+        output, agent_name = routing_agent.route(step)
+        logger.info(f"[Step {idx}/{total}] Completed by {agent_name}")
+        return True, output, agent_name
+    except Exception as exc:
+        logger.error(f"[Step {idx}/{total}] Error: {str(exc)}")
+        return False, str(exc), ""
 
 
 def main() -> None:
@@ -145,7 +150,10 @@ def main() -> None:
     logger.info("*** Workflow execution started ***\n")
     
     # Workflow Configuration
-    workflow_prompt = "What would the development tasks for this product be?"
+    
+    workflow_prompt = f"""Create a complete development plan"""
+    
+    
     logger.info(f"Workflow prompt: {workflow_prompt}\n")
     
     # Extract workflow steps
@@ -157,38 +165,31 @@ def main() -> None:
         return
     
     logger.info(f"Found {len(steps)} workflow steps\n")
-    
 
-    completed_steps: List[str] = []
-    successful_steps = 0
-    context = ""
-    
+    plan = PlanState(prompt=workflow_prompt)
+    plan.add_steps(steps)
+    successful = 0
+
     for idx, step in enumerate(steps, 1):
-     
-        enhanced_step = f"""
-        Current context:
-        {context}
-        New instruction:
-        {step}
-        """
-
-        success, result = execute_workflow_step(enhanced_step, idx, len(steps))
+        plan.mark_in_progress(idx)
+        success, result, agent = execute_workflow_step(step, idx, len(steps))
         if success:
-            completed_steps.append(result)
-            context += f"\n\nStep {idx} output:\n{result}"
-            successful_steps += 1
+            plan.mark_completed(idx, agent, result)
+            successful += 1
             logger.info(f"Result: {result}\n")
         else:
-            logger.warning(f"Step failed, continuing to next step...\n")
-    
-    # Output Summary
+            plan.mark_failed(idx, result)
+            logger.warning(f"Step {idx} failed, continuing...\n")
+
+    full_result = "\n\n".join(
+        f"=== Step {entry.step_number} ({entry.assigned_worker or '?'}) ===\n"
+        f"{entry.final_output or entry.error_message or '(no output)'}"
+        for entry in plan.entries
+    )
+    plan.set_final_output(full_result)
+
     logger.info("*** Workflow execution completed ***")
-    logger.info(f"Summary: {successful_steps}/{len(steps)} steps completed successfully")
-    
-    if completed_steps:
-        logger.info(f"\nFinal Workflow Output:\n{completed_steps[-1]}")
-    else:
-        logger.error("Workflow failed - no completed steps")
+    logger.info(f"Summary: {successful}/{len(steps)} steps completed successfully")
 
 
 if __name__ == "__main__":

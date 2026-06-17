@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from base_agents import RoutingAgent
+from test_logger import log_test_run
 
 
 class FakeAgent:
@@ -53,14 +54,22 @@ class RoutingAgentTest(unittest.TestCase):
             {"embeddings": fake_embeddings()},
         )()
 
+        prompt = "What is the weather?"
+
         with patch("base_agents.get_client", return_value=fake_client):
             router = RoutingAgent([fake_travel, fake_weather])
-            result = router.route("What is the weather?")
+            output, agent_name = router.route(prompt)
 
-        self.assertEqual(
-            result,
-            "weather:weather-response:What is the weather?",
+        expected = "weather:weather-response:What is the weather?"
+
+        log_test_run(
+            test_file=__file__,
+            input_data=prompt,
+            output_data=output,
+            extra=f"agent={agent_name} | expected={expected} | passed={output == expected}",
         )
+
+        self.assertEqual(output, expected)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from base_agents import ActionPlanningAgent
+from test_logger import log_test_run
 
 
 class FakeMessage:
@@ -39,19 +40,25 @@ class FakeClient:
 
 class ActionPlanningAgentTest(unittest.TestCase):
     def test_respond_returns_clean_action_steps(self):
+        prompt = "One morning I wanted to have scrambled eggs"
+
         with patch("base_agents.OpenAI", return_value=FakeClient()):
             agent = ActionPlanningAgent(
-                knowledge="Simple cooking guidance.",
-                api_key="fake-key",
+                name="TestActionPlanner",
+                knowledge="Simple cooking guidance."
             )
-            steps = agent.respond(
-                "One morning I wanted to have scrambled eggs"
-            )
+            steps = agent.respond(prompt)
 
-        self.assertEqual(
-            steps,
-            ["Crack the eggs", "Heat the pan", "Cook and serve"],
+        expected = ["Crack the eggs", "Heat the pan", "Cook and serve"]
+
+        log_test_run(
+            test_file=__file__,
+            input_data=prompt,
+            output_data=str(steps),
+            extra=f"expected={expected} | passed={steps == expected}",
         )
+
+        self.assertEqual(steps, expected)
 
 
 if __name__ == "__main__":

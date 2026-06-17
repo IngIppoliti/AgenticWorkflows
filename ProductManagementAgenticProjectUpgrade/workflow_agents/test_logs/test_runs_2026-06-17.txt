@@ -1,0 +1,62 @@
+========================================================================
+[2026-06-17 15:45:04]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\augmented_prompt_agent_test.py
+========================================================================
+INPUT:
+Why is Paris a great city for first-time visitors?
+
+OUTPUT:
+Paris is a great city for first-time visitors for several reasons:
+
+1. Iconic Landmarks: Paris is home to iconic landmarks such as the Eiffel Tower, Louvre Museum, Notre-Dame Cathedral, and Arc de Triomphe, making it a visually stunning city with plenty of must-see attractions.
+
+2. Rich Culture and History: Paris is known for its rich cultural heritage, including world-class museums, art galleries, and historical sites. Visitors can immerse themselves in the city's history and art scene.
+
+3. Romantic Atmosphere: Paris is often referred to as the "City of Love" due to its romantic ambiance, charming streets, and picturesque cafes. It's a great destination for couples and those looking for a romantic getaway.
+
+4. Culinary Delights: Paris is a paradise for food lovers, with its wide range of cafes, bistros, patisseries, and Michelin-starred restaurants. Visitors can indulge in delicious French cuisine and pastries.
+
+5. Easy to Navigate: Paris has an efficient public transportation system, including the metro and buses, making it easy for first-time visitors to get around the city. Many of the major attractions are also within walking distance of each other.
+
+6. Shopping and Fashion: Paris is a fashion capital of the world, with designer boutiques, department stores, and trendy shops lining the streets. Visitors can shop for high-end fashion or explore local markets for unique finds.
+
+Overall, Paris offers a perfect blend of history, culture, cuisine, and romance, making it an ideal destination for first-time visitors looking to experience the best of what Europe has to offer.
+
+EXTRA:
+Knowledge source: general LLM knowledge. Persona: a helpful travel advisor.
+
+========================================================================
+[2026-06-17 15:45:29]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\action_planning_agent_test.py
+========================================================================
+INPUT:
+One morning I wanted to have scrambled eggs
+
+OUTPUT:
+['Crack the eggs', 'Heat the pan', 'Cook and serve']
+
+EXTRA:
+expected=['Crack the eggs', 'Heat the pan', 'Cook and serve'] | passed=True
+
+========================================================================
+[2026-06-17 15:45:50]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\evaluation_agent_test.py
+========================================================================
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. The capital of France is Paris, not London.
+
+EXTRA:
+evaluation_result=The worker response is accurate and clear. It follows the provided knowledge instructions by providing the correct capital of France, which is Paris, not London. | iterations=2
+
+========================================================================
+[2026-06-17 15:46:20]  Test: c:\Users\fl1danippoli\OneDrive - CRIF SpA\Desktop\work\01 projects\06 AI & DATA\06 GENAI\PersonalProjects\AgenticWorkflows\ProductManagementAgenticProject\workflow_agents\routing_agent_test.py
+========================================================================
+INPUT:
+What is the weather?
+
+OUTPUT:
+weather:weather-response:What is the weather?
+
+EXTRA:
+agent=weather | expected=weather:weather-response:What is the weather? | passed=True
+

@@ -84,7 +84,7 @@ class KnowledgeAugmentedPromptAgent:
 
     def execute(self, user_prompt):
         system_prompt = (
-            f"You are {self.persona} knowledge-based assistant. "
+            f"You are a {self.persona} knowledge-based assistant. "
             "Forget all previous context.\n"
             f"Use only the following knowledge to answer: {self.knowledge}\n"
             "Answer the prompt based on this knowledge, not your own."
@@ -163,7 +163,7 @@ class ActionPlanningAgent:
         )
 
         raw_text = response.choices[0].message.content or ""
-        print(f"Raw response from ActionPlanningAgent: {raw_text}")
+        logger.debug("Raw response from ActionPlanningAgent: %s", raw_text)
         return self._clean_steps(raw_text)
 
 
@@ -200,6 +200,7 @@ class RoutingAgent:
         task_embedding = self.get_embedding(task)
 
         best_agent = None
+        best_agent_name = ""
         best_score = -1.0
 
         for entry in self.agents:
@@ -306,8 +307,8 @@ class EvaluationAgent:
             iterations_performed += 1
             worker_response = self.agent_to_evaluate.execute(revised_prompt)
             evaluation_result = self.evaluate(worker_response)
-            print(f"Iteration {iterations_performed} worker response: {worker_response}")
-            print(f"Iteration {iterations_performed} evaluation: {evaluation_result}")
+            logger.debug("Iteration %d worker response: %s", iterations_performed, worker_response)
+            logger.debug("Iteration %d evaluation: %s", iterations_performed, evaluation_result)
             lowered = evaluation_result.lower()
             if any(
                 kw in lowered

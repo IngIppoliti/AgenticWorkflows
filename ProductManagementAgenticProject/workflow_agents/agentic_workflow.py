@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Tuple
 
-from config import AGENT_CONFIG, load_product_specification
+from config import AGENT_CONFIG
 
 from base_agents import (
     ActionPlanningAgent,
@@ -36,44 +36,27 @@ def create_role_support_function(role_key: str, max_interactions: int = 3) -> Ca
     return support_function
 
 
-# ============================================================================
-# AGENT INITIALIZATION
-# ============================================================================
-
-# Action Planning Agent
-action_planning_agent = ActionPlanningAgent(
-    AGENT_CONFIG["action_planner"]["name"],
-    AGENT_CONFIG["action_planner"]["knowledge"],
-)
-
-# Role-specific support functions (worker + evaluator pair per role)
-product_manager_support_function      = create_role_support_function("product_manager")
-program_manager_support_function      = create_role_support_function("program_manager")
-development_engineer_support_function = create_role_support_function("development_engineer")
-
-# ============================================================================
-# ROUTING AGENT
-# ============================================================================
-
-routing_agent = RoutingAgent(
-    agents=[
-        {
-            "name": "Product Manager",
-            "description": "Responsible for defining user stories for a product.",
-            "func": product_manager_support_function,
-        },
-        {
-            "name": "Program Manager",
-            "description": "Responsible for defining features for a product.",
-            "func": program_manager_support_function,
-        },
-        {
-            "name": "Development Engineer",
-            "description": "Responsible for defining development tasks for a product.",
-            "func": development_engineer_support_function,
-        },
-    ]
-)
+def build_routing_agent() -> RoutingAgent:
+    """Instantiate the routing agent and its role-specific workers."""
+    return RoutingAgent(
+        agents=[
+            {
+                "name": "Product Manager",
+                "description": "Responsible for defining user stories for a product.",
+                "func": create_role_support_function("product_manager"),
+            },
+            {
+                "name": "Program Manager",
+                "description": "Responsible for defining features for a product.",
+                "func": create_role_support_function("program_manager"),
+            },
+            {
+                "name": "Development Engineer",
+                "description": "Responsible for defining development tasks for a product.",
+                "func": create_role_support_function("development_engineer"),
+            },
+        ]
+    )
 
 
 # ============================================================================
@@ -82,7 +65,7 @@ routing_agent = RoutingAgent(
 
 
 def execute_workflow_step(
-    step: str, idx: int, total: int
+    step: str, idx: int, total: int, routing_agent: RoutingAgent
 ) -> Tuple[bool, str, str]:
     """Execute a single workflow step with error handling.
     Returns (success, output, agent_name)."""
@@ -99,22 +82,27 @@ def execute_workflow_step(
 def main() -> None:
     """Main entry point for the agentic workflow."""
     logger.info("*** Workflow execution started ***\n")
-    
+
     # Workflow Configuration
-    
     workflow_prompt = "Create a complete development plan"
-    
-    
+
     logger.info(f"Workflow prompt: {workflow_prompt}\n")
-    
+
+    # Initialize agents
+    action_planning_agent = ActionPlanningAgent(
+        AGENT_CONFIG["action_planner"]["name"],
+        AGENT_CONFIG["action_planner"]["knowledge"],
+    )
+    routing_agent = build_routing_agent()
+
     # Extract workflow steps
     logger.info("Extracting workflow steps from action planning agent...")
     steps = action_planning_agent.execute(workflow_prompt)
-    
+
     if not steps:
         logger.error("No workflow steps extracted. Exiting.")
         return
-    
+
     logger.info(f"Found {len(steps)} workflow steps\n")
 
     plan = PlanState(prompt=workflow_prompt)
@@ -123,7 +111,7 @@ def main() -> None:
 
     for idx, step in enumerate(steps, 1):
         plan.mark_in_progress(idx)
-        success, result, agent = execute_workflow_step(step, idx, len(steps))
+        success, result, agent = execute_workflow_step(step, idx, len(steps), routing_agent)
         if success:
             plan.mark_completed(idx, agent, result)
             successful += 1

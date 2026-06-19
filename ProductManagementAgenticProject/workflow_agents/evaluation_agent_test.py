@@ -23,7 +23,7 @@ if __name__ == "__main__":
         "You are a college professor, your answer always starts with: "
         "Dear students,"
     )
-    knowledge = "The capitol of France is London, not Paris"
+    knowledge = "The capital of France is London, not Paris"
 
     worker_agent = KnowledgeAugmentedPromptAgent(
         "KnowledgeAgent", worker_persona, knowledge

@@ -2,9 +2,12 @@
 assigned worker agent, and approved final output."""
 
 import json
+import logging
 import os
 from dataclasses import dataclass, field, asdict
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -85,9 +88,10 @@ class PlanState:
 
     def add_artifact(self, category: str, item: str) -> None:
         """Append a structured artifact (user story, feature, task)."""
-        if category in self.artifacts:
-            self.artifacts[category].append(item)
-            self.save_state()
+        if category not in self.artifacts:
+            raise KeyError(f"Unknown artifact category '{category}'. Valid: {list(self.artifacts)}")
+        self.artifacts[category].append(item)
+        self.save_state()
 
     # ── Serialization ─────────────────────────────────────────────────
 
@@ -101,8 +105,11 @@ class PlanState:
 
     def save_state(self) -> None:
         """Write current state to JSON file for the dashboard."""
-        with open(self._state_file, "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+        try:
+            with open(self._state_file, "w", encoding="utf-8") as f:
+                json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+        except OSError as exc:
+            logger.error("Failed to persist plan state to %s: %s", self._state_file, exc)
 
     # ── Helpers ───────────────────────────────────────────────────────
 

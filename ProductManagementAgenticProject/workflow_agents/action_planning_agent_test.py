@@ -42,7 +42,7 @@ class ActionPlanningAgentTest(unittest.TestCase):
     def test_respond_returns_clean_action_steps(self):
         prompt = "One morning I wanted to have scrambled eggs"
 
-        with patch("base_agents.OpenAI", return_value=FakeClient()):
+        with patch("base_agents.client", None), patch("base_agents.OpenAI", return_value=FakeClient()):
             agent = ActionPlanningAgent(
                 name="TestActionPlanner",
                 knowledge="Simple cooking guidance."

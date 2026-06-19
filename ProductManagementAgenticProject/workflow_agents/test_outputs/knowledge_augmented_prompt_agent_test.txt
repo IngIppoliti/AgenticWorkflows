@@ -1,0 +1,14 @@
+========================================================================
+[2026-06-19 13:14:59]  Test: knowledge_augmented_prompt_agent_test.py
+========================================================================
+Command:  python knowledge_augmented_prompt_agent_test.py
+
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, the capital of France is London.
+
+EXTRA:
+knowledge='The capital of France is London, not Paris.' | london_in_reply=True
+

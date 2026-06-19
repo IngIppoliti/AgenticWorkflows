@@ -26,3 +26,75 @@ weather:weather-response:What is the weather?
 EXTRA:
 agent=weather | expected=weather:weather-response:What is the weather? | passed=True
 
+========================================================================
+[2026-06-19 13:14:59]  Test: knowledge_augmented_prompt_agent_test.py
+========================================================================
+Command:  python knowledge_augmented_prompt_agent_test.py
+
+INPUT:
+At what temperature does water boil?
+
+OUTPUT:
+Water boils at 100°C at sea level.
+
+EXTRA:
+expected='Water boils at 100°C at sea level.' | passed=True
+
+========================================================================
+[2026-06-19 13:14:59]  Test: knowledge_augmented_prompt_agent_test.py
+========================================================================
+Command:  python knowledge_augmented_prompt_agent_test.py
+
+INPUT:
+What is the tallest mountain?
+
+OUTPUT:
+You are a geography expert knowledge-based assistant. Forget all previous context.
+Use only the following knowledge to answer: Mount Everest is the tallest mountain on Earth.
+Answer the prompt based on this knowledge, not your own.
+
+EXTRA:
+persona_present=True | knowledge_present=True
+
+========================================================================
+[2026-06-19 13:14:59]  Test: knowledge_augmented_prompt_agent_test.py
+========================================================================
+Command:  python knowledge_augmented_prompt_agent_test.py
+
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, the capital of France is London.
+
+EXTRA:
+knowledge='The capital of France is London, not Paris.' | london_in_reply=True
+
+========================================================================
+[2026-06-19 15:06:15]  Test: rag_knowledge_prompt_agent_test.py
+========================================================================
+Command:  python rag_knowledge_prompt_agent_test.py
+
+INPUT:
+Hello world
+
+OUTPUT:
+[{'chunk_id': 0, 'text': 'Hello world', 'chunk_size': 11}]
+
+EXTRA:
+chunk_size=1000 → single chunk expected
+
+========================================================================
+[2026-06-19 15:06:15]  Test: rag_knowledge_prompt_agent_test.py
+========================================================================
+Command:  python rag_knowledge_prompt_agent_test.py
+
+INPUT:
+What podcast does Clara host?
+
+OUTPUT:
+Dear students, Clara hosts Crosscurrents.
+
+EXTRA:
+expected='Dear students, Clara hosts Crosscurrents.' | passed=True
+

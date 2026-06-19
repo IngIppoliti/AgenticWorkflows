@@ -1,0 +1,14 @@
+========================================================================
+[2026-06-19 15:06:15]  Test: rag_knowledge_prompt_agent_test.py
+========================================================================
+Command:  python rag_knowledge_prompt_agent_test.py
+
+INPUT:
+What podcast does Clara host?
+
+OUTPUT:
+Dear students, Clara hosts Crosscurrents.
+
+EXTRA:
+expected='Dear students, Clara hosts Crosscurrents.' | passed=True
+

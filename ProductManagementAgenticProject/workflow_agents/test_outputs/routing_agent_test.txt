@@ -1,0 +1,14 @@
+========================================================================
+[2026-06-19 10:52:35]  Test: routing_agent_test.py
+========================================================================
+Command:  python routing_agent_test.py
+
+INPUT:
+What is the weather?
+
+OUTPUT:
+weather:weather-response:What is the weather?
+
+EXTRA:
+agent=weather | expected=weather:weather-response:What is the weather? | passed=True
+

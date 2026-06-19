@@ -19,34 +19,20 @@ logger = logging.getLogger(__name__)
 # AGENT FACTORY METHODS
 # ============================================================================
 
-def create_knowledge_augmented_agent(
-    agent_name: str, persona: str, knowledge: str
-) -> KnowledgeAugmentedPromptAgent:
-    """Factory method to create a Knowledge Augmented Prompt Agent."""
-    return KnowledgeAugmentedPromptAgent(agent_name, persona, knowledge)
+def create_role_support_function(role_key: str, max_interactions: int = 3) -> Callable:
+    """Build a worker + evaluator pair for a configured role and return its callable."""
+    cfg = AGENT_CONFIG[role_key]
+    worker = KnowledgeAugmentedPromptAgent(cfg["name"], cfg["persona"], cfg["knowledge"])
+    evaluator = EvaluationAgent(
+        persona=cfg["eval_persona"],
+        evaluation_criteria=cfg["eval_criteria"],
+        agent_to_evaluate=worker,
+        max_interactions=max_interactions,
+    )
 
-
-def create_evaluation_agent(
-    max_interactions: int = 5,
-) -> EvaluationAgent:
-    """Factory method to create an Evaluation Agent."""
-    return EvaluationAgent(max_interactions=max_interactions)
-
-
-def create_support_function(
-    knowledge_agent: KnowledgeAugmentedPromptAgent,
-    evaluation_agent: EvaluationAgent,
-    criteria: str = None,
-) -> Callable:
-    """Factory method to create a support function (higher-order function)."""
     def support_function(query: str) -> str:
-        """Execute knowledge agent and evaluate response."""
-        result = evaluation_agent.respond(
-            worker_agent=knowledge_agent,
-            user_prompt=query,
-            criteria=criteria,
-        )
-        return result["final_response"]
+        return evaluator.execute(user_prompt=query)["final_response"]
+
     return support_function
 
 
@@ -60,45 +46,10 @@ action_planning_agent = ActionPlanningAgent(
     AGENT_CONFIG["action_planner"]["knowledge"],
 )
 
-# Product Manager Agents
-product_manager_knowledge_agent = create_knowledge_augmented_agent(
-    AGENT_CONFIG["product_manager"]["name"],
-    AGENT_CONFIG["product_manager"]["persona"],
-    AGENT_CONFIG["product_manager"]["knowledge"],
-)
-product_manager_evaluation_agent = create_evaluation_agent(max_interactions=3)
-
-product_manager_support_function = create_support_function(
-    product_manager_knowledge_agent,
-    product_manager_evaluation_agent,
-    criteria=AGENT_CONFIG["product_manager"]["eval_criteria"],
-)
-
-# Program Manager Agents
-program_manager_knowledge_agent = create_knowledge_augmented_agent(
-    AGENT_CONFIG["program_manager"]["name"],
-    AGENT_CONFIG["program_manager"]["persona"],
-    AGENT_CONFIG["program_manager"]["knowledge"],
-)
-program_manager_evaluation_agent = create_evaluation_agent(max_interactions=3)
-program_manager_support_function = create_support_function(
-    program_manager_knowledge_agent,
-    program_manager_evaluation_agent,
-    criteria=AGENT_CONFIG["program_manager"]["eval_criteria"],
-)
-
-# Development Engineer Agents
-development_engineer_knowledge_agent = create_knowledge_augmented_agent(
-    AGENT_CONFIG["development_engineer"]["name"],
-    AGENT_CONFIG["development_engineer"]["persona"],
-    AGENT_CONFIG["development_engineer"]["knowledge"],
-)
-development_engineer_evaluation_agent = create_evaluation_agent(max_interactions=3)
-development_engineer_support_function = create_support_function(
-    development_engineer_knowledge_agent,
-    development_engineer_evaluation_agent,
-    criteria=AGENT_CONFIG["development_engineer"]["eval_criteria"],
-)
+# Role-specific support functions (worker + evaluator pair per role)
+product_manager_support_function      = create_role_support_function("product_manager")
+program_manager_support_function      = create_role_support_function("program_manager")
+development_engineer_support_function = create_role_support_function("development_engineer")
 
 # ============================================================================
 # ROUTING AGENT
@@ -109,17 +60,17 @@ routing_agent = RoutingAgent(
         {
             "name": "Product Manager",
             "description": "Responsible for defining user stories for a product.",
-            "func": product_manager_support_function,  # ✅ FIXED: Corrected function reference
+            "func": product_manager_support_function,
         },
         {
             "name": "Program Manager",
             "description": "Responsible for defining features for a product.",
-            "func": program_manager_support_function,  # ✅ FIXED: Corrected function reference
+            "func": program_manager_support_function,
         },
         {
             "name": "Development Engineer",
             "description": "Responsible for defining development tasks for a product.",
-            "func": development_engineer_support_function,  # ✅ FIXED: Corrected function reference
+            "func": development_engineer_support_function,
         },
     ]
 )
@@ -151,14 +102,14 @@ def main() -> None:
     
     # Workflow Configuration
     
-    workflow_prompt = f"""Create a complete development plan"""
+    workflow_prompt = "Create a complete development plan"
     
     
     logger.info(f"Workflow prompt: {workflow_prompt}\n")
     
     # Extract workflow steps
     logger.info("Extracting workflow steps from action planning agent...")
-    steps = action_planning_agent.respond(workflow_prompt)
+    steps = action_planning_agent.execute(workflow_prompt)
     
     if not steps:
         logger.error("No workflow steps extracted. Exiting.")

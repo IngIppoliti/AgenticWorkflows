@@ -1,0 +1,14 @@
+========================================================================
+[2026-06-18 18:57:08]  Test: evaluation_agent_test.py
+========================================================================
+Command:  python evaluation_agent_test.py
+
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. The capital of France is Paris, not London.
+
+EXTRA:
+evaluation_result=The worker response is accurate and clear. It follows the provided knowledge instructions by correctly stating the capital of France. | iterations=2
+

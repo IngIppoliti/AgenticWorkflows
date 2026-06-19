@@ -1,0 +1,14 @@
+========================================================================
+[2026-06-18 18:56:55]  Test: direct_prompt_agent_test.py
+========================================================================
+Command:  python direct_prompt_agent_test.py
+
+INPUT:
+What is the Capital of France?
+
+OUTPUT:
+The capital of France is Paris.
+
+EXTRA:
+Knowledge source: general LLM knowledge.
+

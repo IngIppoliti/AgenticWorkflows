@@ -27,7 +27,7 @@ if __name__ == "__main__":
     )
 
     user_prompt = "What is the capital of France?"
-    response = knowledge_agent.respond(user_prompt)
+    response = knowledge_agent.execute(user_prompt)
 
     print("Prompt:", user_prompt)
     print("Response:", response)

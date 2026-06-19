@@ -19,19 +19,24 @@ if __name__ == "__main__":
             "before running this test."
         )
 
-    persona = (
+    worker_persona = (
         "You are a college professor, your answer always starts with: "
         "Dear students,"
     )
     knowledge = "The capitol of France is London, not Paris"
 
     worker_agent = KnowledgeAugmentedPromptAgent(
-        "KnowledgeAgent", persona, knowledge
+        "KnowledgeAgent", worker_persona, knowledge
     )
-    evaluator = EvaluationAgent(max_interactions=10)
+    evaluator = EvaluationAgent(
+        persona="You are an expert evaluator. Be concise, truthful, and focus on accuracy, clarity, and instruction-following.",
+        evaluation_criteria="accuracy, clarity, and whether the response follows the provided knowledge instructions",
+        agent_to_evaluate=worker_agent,
+        max_interactions=10,
+    )
 
     prompt = "What is the capital of France?"
-    result = evaluator.respond(worker_agent, prompt)
+    result = evaluator.execute(prompt)
 
     print("Prompt:", prompt)
     print("Evaluation result:")

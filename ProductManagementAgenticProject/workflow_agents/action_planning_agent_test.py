@@ -47,7 +47,7 @@ class ActionPlanningAgentTest(unittest.TestCase):
                 name="TestActionPlanner",
                 knowledge="Simple cooking guidance."
             )
-            steps = agent.respond(prompt)
+            steps = agent.execute(prompt)
 
         expected = ["Crack the eggs", "Heat the pan", "Cook and serve"]
 

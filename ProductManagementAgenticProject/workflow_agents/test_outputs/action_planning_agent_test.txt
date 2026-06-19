@@ -1,0 +1,14 @@
+========================================================================
+[2026-06-18 18:49:29]  Test: action_planning_agent_test.py
+========================================================================
+Command:  python action_planning_agent_test.py
+
+INPUT:
+One morning I wanted to have scrambled eggs
+
+OUTPUT:
+['Crack the eggs', 'Heat the pan', 'Cook and serve']
+
+EXTRA:
+expected=['Crack the eggs', 'Heat the pan', 'Cook and serve'] | passed=True
+

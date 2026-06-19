@@ -82,7 +82,7 @@ class KnowledgeAugmentedPromptAgent:
         self.persona = persona
         self.knowledge = knowledge
 
-    def respond(self, user_prompt):
+    def execute(self, user_prompt):
         system_prompt = (
             f"You are {self.persona} knowledge-based assistant. "
             "Forget all previous context.\n"
@@ -133,10 +133,10 @@ class ActionPlanningAgent:
 
         return steps
 
-    def respond(self, user_prompt):
+    def execute(self, user_prompt):
 
         system_prompt = (
-            
+
             f"""
             You are an Action Planning Agent.
 
@@ -231,8 +231,6 @@ class RoutingAgent:
 
         if hasattr(best_agent, "execute"):
             output = best_agent.execute(task)
-        elif hasattr(best_agent, "respond"):
-            output = best_agent.respond(task)
         elif callable(best_agent):
             output = best_agent(task)
         else:
@@ -245,42 +243,43 @@ class RoutingAgent:
 
 class EvaluationAgent:
     """
-    Evaluates a worker response against criteria and returns a concise
-    assessment along with the number of interaction rounds used.
+    Evaluates a worker agent's responses against role-specific criteria and
+    iteratively refines them up to max_interactions rounds.
     """
-    def __init__(self, max_interactions=5):
+    def __init__(
+        self,
+        persona: str,
+        evaluation_criteria: str,
+        agent_to_evaluate,
+        max_interactions: int = 5,
+    ):
+        self.persona = persona
+        self.evaluation_criteria = evaluation_criteria
+        self.agent_to_evaluate = agent_to_evaluate
         self.max_interactions = max_interactions
 
-    def evaluate(self, worker_response, criteria):
+    def evaluate(self, worker_response: str) -> str:
         evaluation_prompt = (
             "Evaluate the worker response against these criteria: "
-            f"{criteria}.\n\nWorker response:\n{worker_response}"
+            f"{self.evaluation_criteria}.\n\nWorker response:\n{worker_response}"
         )
-
-        evaluation_response = get_client().chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an expert evaluator. Be concise, truthful, "
-                        "and focus on accuracy, clarity, and instruction-following."
-                    ),
-                },
+                {"role": "system", "content": self.persona},
                 {"role": "user", "content": evaluation_prompt},
             ],
             temperature=0,
         )
-        return evaluation_response.choices[0].message.content
-    
-    def _generate_correction_instructions(self, evaluation_result):
+        return response.choices[0].message.content
+
+    def _generate_correction_instructions(self, evaluation_result: str) -> str:
         correction_prompt = (
             "Based on the evaluation, provide short correction "
             f"instructions for the worker response.\n\nEvaluation:\n"
             f"{evaluation_result}"
         )
-
-        correction_response = get_client().chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
@@ -294,15 +293,9 @@ class EvaluationAgent:
             ],
             temperature=0,
         )
-        return correction_response.choices[0].message.content
-    
-    def respond(self, worker_agent, user_prompt, criteria=None):
-        if criteria is None:
-            criteria = (
-                "accuracy, clarity, and whether the response follows "
-                "the provided knowledge instructions"
-            )
+        return response.choices[0].message.content
 
+    def execute(self, user_prompt: str) -> dict:
         worker_response = None
         evaluation_result = ""
         correction_instructions = ""
@@ -311,20 +304,22 @@ class EvaluationAgent:
         revised_prompt = user_prompt
         for _ in range(self.max_interactions):
             iterations_performed += 1
-            worker_response = worker_agent.respond(revised_prompt)
-            evaluation_result = self.evaluate(worker_response, criteria)
+            worker_response = self.agent_to_evaluate.execute(revised_prompt)
+            evaluation_result = self.evaluate(worker_response)
             print(f"Iteration {iterations_performed} worker response: {worker_response}")
             print(f"Iteration {iterations_performed} evaluation: {evaluation_result}")
-            if ("no issues" in evaluation_result.lower()
-                or "good" in evaluation_result.lower()
-                or "acceptable" in evaluation_result.lower()
-                or "meets the criteria" in evaluation_result.lower()
-                or "is accurate" in evaluation_result.lower()
+            lowered = evaluation_result.lower()
+            if any(
+                kw in lowered
+                for kw in ("no issues", "good", "acceptable", "meets the criteria", "is accurate")
             ):
                 break
-            
+
             correction_instructions = self._generate_correction_instructions(evaluation_result)
-            revised_prompt = f"{user_prompt}\n\n Revised instructions based on evaluation: {correction_instructions}"
+            revised_prompt = (
+                f"{user_prompt}\n\n"
+                f"Revised instructions based on evaluation: {correction_instructions}"
+            )
 
         return {
             "final_response": worker_response,

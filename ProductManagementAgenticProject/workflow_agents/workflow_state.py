@@ -76,7 +76,7 @@ class PlanState:
             entry.error_message = error
             self.save_state()
 
-    # ── Serialization ─────────────────────────────────────────────────
+    # ── Accumulation ──────────────────────────────────────────────────
 
     def set_final_output(self, output: str) -> None:
         """Set the accumulated final output shown at the end of the plan."""
@@ -107,10 +107,7 @@ class PlanState:
     # ── Helpers ───────────────────────────────────────────────────────
 
     def _find(self, step_number: int) -> Optional[PlanEntry]:
-        for e in self.entries:
-            if e.step_number == step_number:
-                return e
-        return None
+        return next((e for e in self.entries if e.step_number == step_number), None)
 
     # ── Rendering ─────────────────────────────────────────────────────
 

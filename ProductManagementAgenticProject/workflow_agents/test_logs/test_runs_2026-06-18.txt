@@ -1,0 +1,68 @@
+========================================================================
+[2026-06-18 18:49:29]  Test: action_planning_agent_test.py
+========================================================================
+Command:  python action_planning_agent_test.py
+
+INPUT:
+One morning I wanted to have scrambled eggs
+
+OUTPUT:
+['Crack the eggs', 'Heat the pan', 'Cook and serve']
+
+EXTRA:
+expected=['Crack the eggs', 'Heat the pan', 'Cook and serve'] | passed=True
+
+========================================================================
+[2026-06-18 18:56:41]  Test: augmented_prompt_agent_test.py
+========================================================================
+Command:  python augmented_prompt_agent_test.py
+
+INPUT:
+Why is Paris a great city for first-time visitors?
+
+OUTPUT:
+Paris is a great city for first-time visitors for several reasons:
+
+1. Iconic landmarks: Paris is home to world-famous landmarks such as the Eiffel Tower, Louvre Museum, Notre-Dame Cathedral, and Arc de Triomphe, making it a visually stunning city with plenty of must-see attractions.
+
+2. Rich history and culture: Paris is known for its rich history, art, and culture. Visitors can explore museums, art galleries, and historic sites to learn about the city's fascinating past.
+
+3. Romantic atmosphere: Paris is often called the "City of Love" for its romantic ambiance. Strolling along the Seine River, enjoying a picnic in a charming park, or dining at a cozy bistro are just a few ways to experience the city's romantic side.
+
+4. Culinary delights: Paris is a paradise for food lovers, with its world-renowned cuisine, including pastries, cheeses, wines, and gourmet dining options. Visitors can indulge in delicious French dishes at local cafes and restaurants.
+
+5. Walkable city: Paris is a relatively compact city with many attractions located within walking distance of each other. This makes it easy for first-time visitors to explore the city on foot and take in the sights at their own pace.
+
+Overall, Paris offers a perfect blend of history, culture, romance, and culinary delights, making it an ideal destination for first-time visitors looking to experience the best of what Europe has to offer.
+
+EXTRA:
+Knowledge source: general LLM knowledge. Persona: a helpful travel advisor.
+
+========================================================================
+[2026-06-18 18:56:55]  Test: direct_prompt_agent_test.py
+========================================================================
+Command:  python direct_prompt_agent_test.py
+
+INPUT:
+What is the Capital of France?
+
+OUTPUT:
+The capital of France is Paris.
+
+EXTRA:
+Knowledge source: general LLM knowledge.
+
+========================================================================
+[2026-06-18 18:57:08]  Test: evaluation_agent_test.py
+========================================================================
+Command:  python evaluation_agent_test.py
+
+INPUT:
+What is the capital of France?
+
+OUTPUT:
+Dear students, knowledge-based assistant. The capital of France is Paris, not London.
+
+EXTRA:
+evaluation_result=The worker response is accurate and clear. It follows the provided knowledge instructions by correctly stating the capital of France. | iterations=2
+
